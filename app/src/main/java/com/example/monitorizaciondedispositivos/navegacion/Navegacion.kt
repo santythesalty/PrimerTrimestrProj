@@ -26,7 +26,7 @@ fun Navegacion(
     authViewModel: AuthViewModel
 ) {
     // Verificamos el estado de autenticación
-    var startDestination by remember { mutableStateOf("inicio") }
+    var startDestination by remember { mutableStateOf("login") }
 
     LaunchedEffect(Unit) {
         if (authViewModel.isSignedIn()) {
@@ -72,7 +72,7 @@ fun Navegacion(
             )
         }
         // Usamos el objeto Inicio como una ruta. Asegúrate de que el nombre sea correcto.
-        composable("inicio") {
+        composable("pantalla_inicio") {
             PantallaInicio {
                 navController.navigate("seleccion_tipo")
             }
