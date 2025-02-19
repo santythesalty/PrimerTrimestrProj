@@ -2,7 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
-    id("com.google.gms.google-services")
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -11,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.monitorizaciondedispositivos"
-        minSdk = 21
+        minSdk = 24
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -42,7 +43,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
+        kotlinCompilerExtensionVersion = "1.6.0"
     }
     packaging {
         resources {
@@ -66,30 +67,30 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+
     implementation(libs.coil)
     implementation(libs.icon.extended)
-    implementation(libs.androidx.navigation.compose) // ✅ Mantén solo una navegación
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
-
-    // Retrofit (Eliminar duplicados)
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation(libs.androidx.navigation.compose)
+    implementation("com.google.code.gson:gson:2.10.1")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-
-    // ViewModel (Actualizar a la última versión)
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
-    implementation("androidx.activity:activity-compose:1.8.0")
-    implementation("io.coil-kt:coil-compose:2.2.2")
-
+    implementation("androidx.navigation:navigation-compose:2.8.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     implementation(libs.androidx.runtime.livedata)
+    implementation (libs.retrofit)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.room.runtime)
-    implementation(libs.support.annotations)
 
-    // Firebase (Usar BOM y evitar duplicados)
-    implementation(platform("com.google.firebase:firebase-bom:32.2.0")) // ✅ Gestiona versiones automáticamente
-    implementation("com.google.firebase:firebase-auth-ktx") // ✅ Firebase Auth
-    implementation("com.google.firebase:firebase-firestore-ktx") // ✅ Firestore SDK
-    implementation("com.google.android.gms:play-services-auth:20.7.0") // Google Sign-In
+
+    implementation("com.google.firebase:firebase-auth:21.0.1")  // Para Firebase Authentication
+    implementation("com.google.firebase:firebase-firestore:24.0.0")  // Para Firestore
+    implementation("com.google.firebase:firebase-analytics:21.0.0")  // Si usas Analytics
+
+    // Firebase BoM (Bill of Materials) para mantener las dependencias en versiones compatibles
+    implementation(platform("com.google.firebase:firebase-bom:31.0.2"))
+
+    implementation ("com.google.android.gms:play-services-auth:20.6.0")
+
+    implementation(libs.firebase.firestore)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
