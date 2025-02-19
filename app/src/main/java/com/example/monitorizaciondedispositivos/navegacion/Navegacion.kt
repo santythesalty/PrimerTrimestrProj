@@ -20,7 +20,9 @@ import com.example.monitorizaciondedispositivos.modelos.*
 import com.example.monitorizaciondedispositivos.pantallas.LoginScreen
 import com.example.monitorizaciondedispositivos.pantallas.SignUpScreen
 
-val listaDispositivos = listOf("Dispositivo 1", "Dispositivo 2", "Dispositivo 3",)
+
+
+//val listaDispositivos = listOf("Dispositivo 1", "Dispositivo 2", "Dispositivo 3",)
 
 @Composable
 fun Navegacion(
@@ -75,7 +77,7 @@ fun Navegacion(
         }
         // Usamos el objeto Inicio como una ruta. Asegúrate de que el nombre sea correcto.
         composable("pantalla_inicio") {
-            PantallaInicio(listaDispositivos) {
+            PantallaInicio() {
                 navController.navigate("seleccion_tipo")
             }
         }
