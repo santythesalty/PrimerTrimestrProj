@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "373052175000",
+    "project_id": "monitorizaciondispositivos",
+    "storage_bucket": "monitorizaciondispositivos.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:373052175000:android:0d92fe52176a8b3fdc96ed",
+        "android_client_info": {
+          "package_name": "com.example.monitorizaciondedispositivos"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "373052175000-p5c71jiqr2lhcbobvcl6q8e0kg9ppht9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.monitorizaciondedispositivos",
+            "certificate_hash": "f26656ec5feb60ca39f0bb3b49f63946469f66f4"
+          }
+        },
+        {
+          "client_id": "373052175000-sltd7bhqiu0hscpnlmqcj0o0dlhk0emt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCNLfe8jhXjWY9SGd1wQ3G7ukxzRcWjAcI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "373052175000-sltd7bhqiu0hscpnlmqcj0o0dlhk0emt.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
