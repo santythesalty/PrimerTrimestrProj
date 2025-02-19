@@ -5,56 +5,80 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed class Dispositivo(val nombre: String)
 
-@Serializable
 data class SensorTemperaturaHumedad(
+    val id: String ?= null,
+    val userid: String?,
+    val nombre: String?,
     val rangoTemperatura: String,
     val rangoHumedad: String
-) : Dispositivo("Sensor de Temperatura y Humedad")
+)
 
-@Serializable
 data class SensorMovimiento(
+    val id: String ?= null,
+    val userid: String?,
+    val nombre: String?,
     val distanciaDeteccion: Int,
     val anguloDeteccion: Int
-) : Dispositivo("Sensor de Movimiento (PIR)")
+)
 
-@Serializable
+
 data class SensorApertura(
+    val id: String ?= null,
+    val userid: String?,
+    val nombre: String?,
     val tipoPuerta: String,
     val sensibilidad: String
-) : Dispositivo("Sensor de apertura")
+)
 
-@Serializable
+
 data class ReleInteligente(
+    val id: String ?= null,
+    val userid: String?,
+    val nombre: String?,
     val capacidadCorriente: Double,
     val voltajeSoportado: Double
-) : Dispositivo("Relé Inteligente")
+)
 
-@Serializable
+
 data class ActuadorValvula(
+    val id: String ?= null,
+    val userid: String?,
+    val nombre: String?,
     val tipoValvula: String,
     val presionMaxima: Double
-) : Dispositivo("Actuador de Válvula")
+)
 
-@Serializable
+
 data class Servomotor(
+    val id: String ?= null,
+    val userid: String?,
+    val nombre: String?,
     val rangoRotacion: Int,
     val parMaximo: Double
-) : Dispositivo("Servomotor")
+)
 
-@Serializable
 data class CamaraIP(
+    val id: String ?= null,
+    val userid: String?,
+    val nombre: String?,
     val resolucion: String,
     val visionNocturna: Boolean
-) : Dispositivo("Cámara IP")
+)
 
-@Serializable
+
 data class ControladorClima(
+    val id: String ?= null,
+    val userid: String?,
+    val nombre: String?,
     val soporteHVAC: Boolean,
     val capacidadBTU: Int
-) : Dispositivo("Controlador de Clima (HVAC)")
+)
 
-@Serializable
+
 data class EstacionMeteorologica(
+    val id: String ?= null,
+    val userid: String?,
+    val nombre: String?,
     val sensores: List<String>,
     val rangoOperacion: String
-) : Dispositivo("Estación Meteorológica")
+)
