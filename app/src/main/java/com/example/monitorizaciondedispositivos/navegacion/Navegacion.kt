@@ -14,7 +14,7 @@ import androidx.navigation.toRoute
 import com.example.monitorizaciondedispositivos.data.AuthViewModel
 import com.example.monitorizaciondedispositivos.pantallas.PantallaInicio
 import com.example.monitorizaciondedispositivos.pantallas.PantallaSeleccionTipo
-import com.example.monitorizaciondedispositivos.pantallas.PantallaListaDispositivos
+//import com.example.monitorizaciondedispositivos.pantallas.PantallaListaDispositivos
 import com.example.monitorizaciondedispositivos.pantallas.PantallaConfiguracionDispositivo
 import com.example.monitorizaciondedispositivos.modelos.*
 import com.example.monitorizaciondedispositivos.pantallas.LoginScreen
@@ -71,25 +71,29 @@ fun Navegacion(
                 }
             )
         }
-        composable<Inicio> {
+        // Usamos el objeto Inicio como una ruta. Asegúrate de que el nombre sea correcto.
+        composable("inicio") {
             PantallaInicio {
-                navController.navigate(SeleccionTipo)
+                navController.navigate("seleccion_tipo")
             }
         }
-        composable<SeleccionTipo> {
+        // Usamos el objeto SeleccionTipo como una ruta
+        composable("seleccion_tipo") {
             PantallaSeleccionTipo { tipo ->
-                navController.navigate(ListaDispositivos(tipo))
+                navController.navigate("pantalla_lista_dispositivos/$tipo")
             }
         }
-        composable<ListaDispositivos> { backStackEntry ->
-            val data = backStackEntry.toRoute<ListaDispositivos>()
-            PantallaListaDispositivos(data.tipo) { dispositivo ->
-                navController.navigate(ConfiguracionDispositivo(dispositivo))
-            }
-        }
-        composable<ConfiguracionDispositivo> { backStackEntry ->
-            val dispositivo = backStackEntry.toRoute<Dispositivo>()
-            PantallaConfiguracionDispositivo(dispositivo)
-        }
+//        // Ruta dinámica para ListaDispositivos con el parámetro 'tipo'
+//        composable("pantalla_lista_dispositivos/{tipo}") { backStackEntry ->
+//            val tipo = backStackEntry.arguments?.getString("tipo") ?: ""
+//            PantallaListaDispositivos(tipo) { dispositivo ->
+//                navController.navigate("pantalla_configuracion_dispositivo/$dispositivo")
+//            }
+//        }
+//        // Ruta dinámica para ConfiguracionDispositivo con el parámetro 'dispositivo'
+//        composable("pantalla_configuracion_dispositivo/{dispositivo}") { backStackEntry ->
+//            val dispositivo = backStackEntry.arguments?.getString("dispositivo") ?: ""
+//            PantallaConfiguracionDispositivo(dispositivo)
+//        }
     }
 }
