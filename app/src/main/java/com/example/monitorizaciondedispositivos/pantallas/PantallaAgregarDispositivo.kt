@@ -19,11 +19,12 @@ import com.example.monitorizaciondedispositivos.modelos.*
 fun PantallaAgregarDispositivo(navController: NavHostController) {
     val firestore = FirebaseFirestore.getInstance()
 
+    // Variables de estado para los campos
     var nombre by remember { mutableStateOf("") }
-    var tipoDispositivo by remember { mutableStateOf("Sensor de Temperatura y Humedad") }
+    var tipoDispositivo by remember { mutableStateOf("Selecciona el tipo de dispositivo") }
     var expanded by remember { mutableStateOf(false) }
 
-    // Variables para atributos específicos
+    // Variables para los atributos según el tipo de dispositivo
     var rangoTemperatura by remember { mutableStateOf("") }
     var rangoHumedad by remember { mutableStateOf("") }
     var distanciaDeteccion by remember { mutableStateOf("") }
@@ -54,10 +55,11 @@ fun PantallaAgregarDispositivo(navController: NavHostController) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.Top
         ) {
+            // Desplegable para seleccionar el tipo de dispositivo
             Text("Selecciona el tipo de dispositivo", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Selector de tipo de dispositivo
+            // Dropdown para seleccionar el tipo de dispositivo
             Box {
                 Button(onClick = { expanded = true }) {
                     Text(tipoDispositivo)
@@ -83,6 +85,7 @@ fun PantallaAgregarDispositivo(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Campo para el nombre del dispositivo
             OutlinedTextField(
                 value = nombre,
                 onValueChange = { nombre = it },
@@ -92,7 +95,7 @@ fun PantallaAgregarDispositivo(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Mostrar dinámicamente los atributos según el tipo de dispositivo
+            // Mostrar los campos según el tipo de dispositivo seleccionado
             when (tipoDispositivo) {
                 "Sensor de Temperatura y Humedad" -> {
                     OutlinedTextField(
@@ -173,39 +176,44 @@ fun PantallaAgregarDispositivo(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Botón para guardar en Firestore
+            // Botón para guardar el dispositivo en Firestore
             Button(
                 onClick = {
-                    val dispositivo = when (tipoDispositivo) {
-                        "Sensor de Temperatura y Humedad" -> SensorTemperaturaHumedadDB(
-                            nombre = nombre,
-                            rangoTemperatura = rangoTemperatura,
-                            rangoHumedad = rangoHumedad
+                    val dispositivoMap = when (tipoDispositivo) {
+                        "Sensor de Temperatura y Humedad" -> mapOf(
+                            "tipo" to "SensorTemperaturaHumedadDB",
+                            "nombre" to nombre,
+                            "rangoTemperatura" to rangoTemperatura,
+                            "rangoHumedad" to rangoHumedad
                         )
-                        "Sensor de Movimiento" -> SensorMovimientoDB(
-                            nombre = nombre,
-                            distanciaDeteccion = distanciaDeteccion.toIntOrNull() ?: 0,
-                            anguloDeteccion = anguloDeteccion.toIntOrNull() ?: 0
+                        "Sensor de Movimiento" -> mapOf(
+                            "tipo" to "SensorMovimientoDB",
+                            "nombre" to nombre,
+                            "distanciaDeteccion" to distanciaDeteccion.toIntOrNull(),
+                            "anguloDeteccion" to anguloDeteccion.toIntOrNull()
                         )
-                        "Sensor de Apertura" -> SensorAperturaDB(
-                            nombre = nombre,
-                            tipoPuerta = tipoPuerta,
-                            sensibilidad = sensibilidad
+                        "Sensor de Apertura" -> mapOf(
+                            "tipo" to "SensorAperturaDB",
+                            "nombre" to nombre,
+                            "tipoPuerta" to tipoPuerta,
+                            "sensibilidad" to sensibilidad
                         )
-                        "Relé Inteligente" -> ReleInteligenteDB(
-                            nombre = nombre,
-                            capacidadCorriente = capacidadCorriente.toDoubleOrNull() ?: 0.0,
-                            voltajeSoportado = voltajeSoportado.toDoubleOrNull() ?: 0.0
+                        "Relé Inteligente" -> mapOf(
+                            "tipo" to "ReleInteligenteDB",
+                            "nombre" to nombre,
+                            "capacidadCorriente" to capacidadCorriente.toDoubleOrNull(),
+                            "voltajeSoportado" to voltajeSoportado.toDoubleOrNull()
                         )
-                        "Cámara IP" -> CamaraIPDB(
-                            nombre = nombre,
-                            resolucion = resolucion,
-                            visionNocturna = visionNocturna
+                        "Cámara IP" -> mapOf(
+                            "tipo" to "CamaraIPDB",
+                            "nombre" to nombre,
+                            "resolucion" to resolucion,
+                            "visionNocturna" to visionNocturna
                         )
                         else -> null
                     }
 
-                    dispositivo?.let {
+                    dispositivoMap?.let {
                         firestore.collection("dispositivos").add(it)
                     }
 
