@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -55,14 +56,19 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
                         Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Volver a Login")
                     }
                 },
-                actions = { // 🔴 Botón para Cerrar Sesión
-                    TextButton(onClick = {
+                actions = {
+                    // 🔴 Icono para Cerrar Sesión
+                    IconButton(onClick = {
                         authViewModel.logout() // Cerrar sesión
                         navController.navigate("login") {
                             popUpTo("pantalla_inicio") { inclusive = true }
                         }
                     }) {
-                        Text("Salir", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Icon(
+                            imageVector = Icons.Default.ExitToApp, // Ícono de salida
+                            contentDescription = "Cerrar Sesión",
+                            tint = Color.Black // Ícono negro
+                        )
                     }
                 }
             )
