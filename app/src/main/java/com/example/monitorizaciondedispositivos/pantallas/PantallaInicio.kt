@@ -29,21 +29,49 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
     var sinRegistros by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
-        try {
-            firestore.collection("dispositivos").addSnapshotListener { snapshot, _ ->
-                dispositivos.clear()
-                if (snapshot == null || snapshot.isEmpty) {
-                    sinRegistros = true
-                } else {
-                    sinRegistros = false
-                    snapshot.documents.forEach { document ->
-                        val nombre = document.getString("nombre") ?: "Desconocido"
-                        dispositivos.add(SensorTemperaturaHumedadDB(nombre = nombre))
+        firestore.collection("dispositivos").addSnapshotListener { snapshot, _ ->
+            dispositivos.clear()
+            if (snapshot == null || snapshot.isEmpty) {
+                sinRegistros = true
+            } else {
+                sinRegistros = false
+                snapshot.documents.forEach { document ->
+                    val tipo = document.getString("tipo") ?: ""
+                    val nombre = document.getString("nombre") ?: "Desconocido"
+
+                    // Convertir según el tipo guardado en Firestore
+                    val dispositivo = when (tipo) {
+                        "SensorTemperaturaHumedadDB" -> SensorTemperaturaHumedadDB(
+                            nombre = nombre,
+                            rangoTemperatura = document.getString("rangoTemperatura") ?: "",
+                            rangoHumedad = document.getString("rangoHumedad") ?: ""
+                        )
+                        "SensorMovimientoDB" -> SensorMovimientoDB(
+                            nombre = nombre,
+                            distanciaDeteccion = document.getLong("distanciaDeteccion")?.toInt() ?: 0,
+                            anguloDeteccion = document.getLong("anguloDeteccion")?.toInt() ?: 0
+                        )
+                        "SensorAperturaDB" -> SensorAperturaDB(
+                            nombre = nombre,
+                            tipoPuerta = document.getString("tipoPuerta") ?: "",
+                            sensibilidad = document.getString("sensibilidad") ?: ""
+                        )
+                        "ReleInteligenteDB" -> ReleInteligenteDB(
+                            nombre = nombre,
+                            capacidadCorriente = document.getDouble("capacidadCorriente") ?: 0.0,
+                            voltajeSoportado = document.getDouble("voltajeSoportado") ?: 0.0
+                        )
+                        "CamaraIPDB" -> CamaraIPDB(
+                            nombre = nombre,
+                            resolucion = document.getString("resolucion") ?: "",
+                            visionNocturna = document.getBoolean("visionNocturna") ?: false
+                        )
+                        else -> null
                     }
+
+                    dispositivo?.let { dispositivos.add(it) }
                 }
             }
-        } catch (e: Exception) {
-            Log.e("Firestore", "Error al recuperar dispositivos: ${e.message}")
         }
     }
 
@@ -60,7 +88,7 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
                         Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Volver a Login")
                     }
                 },
-                actions = { // 🔴 Botón para Cerrar Sesión
+                actions = {
                     TextButton(onClick = {
                         authViewModel.logout()
                         navController.navigate("login") {
@@ -90,7 +118,7 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Lista de Dispositivos", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+            Text("Lista de Dispositivos", fontSize = 20.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(16.dp))
 
             if (sinRegistros) {
@@ -158,3 +186,4 @@ fun DispositivoCard(dispositivo: DispositivoBD) {
         }
     }
 }
+
