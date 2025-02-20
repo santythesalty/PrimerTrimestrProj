@@ -64,7 +64,7 @@ fun Navegacion(
             SignUpScreen(
                 authViewModel = authViewModel,
                 onSignUpSuccess = {
-                    navController.navigate("menu") {
+                    navController.navigate("pantalla-inicio") {
                         popUpTo("signup") { inclusive = true }
                     }
                 },
@@ -77,10 +77,14 @@ fun Navegacion(
         }
         // Usamos el objeto Inicio como una ruta. Asegúrate de que el nombre sea correcto.
         composable("pantalla_inicio") {
-            PantallaInicio() {
+            PantallaInicio(
+                authViewModel = authViewModel,
+                navController = navController
+            ) {
                 navController.navigate("seleccion_tipo")
             }
         }
+
         // Usamos el objeto SeleccionTipo como una ruta
         composable("seleccion_tipo") {
             PantallaSeleccionTipo { tipo ->
