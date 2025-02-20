@@ -9,7 +9,6 @@ import androidx.compose.runtime.setValue
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import com.example.monitorizaciondedispositivos.data.AuthViewModel
 import com.example.monitorizaciondedispositivos.pantallas.*
 
@@ -49,6 +48,7 @@ fun Navegacion(
                 }
             )
         }
+
         composable("signup") {
             SignUpScreen(
                 authViewModel = authViewModel,
@@ -65,12 +65,12 @@ fun Navegacion(
             )
         }
 
-        // 🔹 Pantalla Inicio
+        // 🔹 Pantalla Inicio (✅ Agregamos authViewModel correctamente)
         composable("pantalla_inicio") {
-            PantallaInicio(navController = navController)
+            PantallaInicio(navController = navController, authViewModel = authViewModel)
         }
 
-        // 🔹 Pantalla para agregar dispositivos (Navegación desde el botón "+")
+        // 🔹 Pantalla para agregar dispositivos (✅ Asegurando la importación y existencia)
         composable("pantalla_agregar_dispositivo") {
             PantallaAgregarDispositivo(navController = navController)
         }

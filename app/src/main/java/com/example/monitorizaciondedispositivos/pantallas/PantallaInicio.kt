@@ -17,13 +17,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.google.firebase.firestore.FirebaseFirestore
+import com.example.monitorizaciondedispositivos.data.AuthViewModel
 import com.example.monitorizaciondedispositivos.modelos.DispositivosBD
 import com.example.monitorizaciondedispositivos.modelos.DispositivoBD
 import com.example.monitorizaciondedispositivos.modelos.SensorTemperaturaHumedadDB
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PantallaInicio(navController: NavHostController) {
+fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewModel) {
     val dispositivos = remember { mutableStateListOf<DispositivoBD>() }
     val firestore = FirebaseFirestore.getInstance()
 
@@ -50,8 +51,18 @@ fun PantallaInicio(navController: NavHostController) {
                         navController.navigate("login") {
                             popUpTo("pantalla_inicio") { inclusive = true }
                         }
-                    }) { // 🔙 Botón para volver a login
+                    }) {
                         Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Volver a Login")
+                    }
+                },
+                actions = { // 🔴 Botón para Cerrar Sesión
+                    TextButton(onClick = {
+                        authViewModel.logout() // Cerrar sesión
+                        navController.navigate("login") {
+                            popUpTo("pantalla_inicio") { inclusive = true }
+                        }
+                    }) {
+                        Text("Salir", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             )
