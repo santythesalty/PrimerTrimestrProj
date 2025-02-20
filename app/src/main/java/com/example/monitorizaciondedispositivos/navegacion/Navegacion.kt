@@ -10,19 +10,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.toRoute
 import com.example.monitorizaciondedispositivos.data.AuthViewModel
-import com.example.monitorizaciondedispositivos.pantallas.PantallaInicio
-import com.example.monitorizaciondedispositivos.pantallas.PantallaSeleccionTipo
-//import com.example.monitorizaciondedispositivos.pantallas.PantallaListaDispositivos
-import com.example.monitorizaciondedispositivos.pantallas.PantallaConfiguracionDispositivo
-import com.example.monitorizaciondedispositivos.modelos.*
-import com.example.monitorizaciondedispositivos.pantallas.LoginScreen
-import com.example.monitorizaciondedispositivos.pantallas.SignUpScreen
-
-
-
-//val listaDispositivos = listOf("Dispositivo 1", "Dispositivo 2", "Dispositivo 3",)
+import com.example.monitorizaciondedispositivos.pantallas.*
 
 @Composable
 fun Navegacion(
@@ -64,7 +53,7 @@ fun Navegacion(
             SignUpScreen(
                 authViewModel = authViewModel,
                 onSignUpSuccess = {
-                    navController.navigate("pantalla-inicio") {
+                    navController.navigate("pantalla_inicio") {
                         popUpTo("signup") { inclusive = true }
                     }
                 },
@@ -75,33 +64,22 @@ fun Navegacion(
                 }
             )
         }
-        // Usamos el objeto Inicio como una ruta. Asegúrate de que el nombre sea correcto.
+
+        // 🔹 Pantalla Inicio
         composable("pantalla_inicio") {
-            PantallaInicio(
-                authViewModel = authViewModel,
-                navController = navController
-            ) {
-                navController.navigate("seleccion_tipo")
-            }
+            PantallaInicio(navController = navController)
         }
 
-        // Usamos el objeto SeleccionTipo como una ruta
+        // 🔹 Pantalla para agregar dispositivos (Navegación desde el botón "+")
+        composable("pantalla_agregar_dispositivo") {
+            PantallaAgregarDispositivo(navController = navController)
+        }
+
+        // 🔹 Pantalla de selección de tipo de dispositivo
         composable("seleccion_tipo") {
             PantallaSeleccionTipo { tipo ->
                 navController.navigate("pantalla_lista_dispositivos/$tipo")
             }
         }
-//        // Ruta dinámica para ListaDispositivos con el parámetro 'tipo'
-//        composable("pantalla_lista_dispositivos/{tipo}") { backStackEntry ->
-//            val tipo = backStackEntry.arguments?.getString("tipo") ?: ""
-//            PantallaListaDispositivos(tipo) { dispositivo ->
-//                navController.navigate("pantalla_configuracion_dispositivo/$dispositivo")
-//            }
-//        }
-//        // Ruta dinámica para ConfiguracionDispositivo con el parámetro 'dispositivo'
-//        composable("pantalla_configuracion_dispositivo/{dispositivo}") { backStackEntry ->
-//            val dispositivo = backStackEntry.arguments?.getString("dispositivo") ?: ""
-//            PantallaConfiguracionDispositivo(dispositivo)
-//        }
     }
 }
