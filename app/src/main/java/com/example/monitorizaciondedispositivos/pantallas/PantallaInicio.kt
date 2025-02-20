@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
@@ -18,27 +17,33 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.google.firebase.firestore.FirebaseFirestore
 import com.example.monitorizaciondedispositivos.data.AuthViewModel
-import com.example.monitorizaciondedispositivos.modelos.DispositivosBD
-import com.example.monitorizaciondedispositivos.modelos.DispositivoBD
-import com.example.monitorizaciondedispositivos.modelos.SensorTemperaturaHumedadDB
+import com.example.monitorizaciondedispositivos.modelos.*
+import android.util.Log
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewModel) {
     val dispositivos = remember { mutableStateListOf<DispositivoBD>() }
     val firestore = FirebaseFirestore.getInstance()
+    var sinRegistros by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
-        dispositivos.clear()
-        dispositivos.addAll(DispositivosBD.obtenerDispositivos()) // Agregar todos los dispositivos
-
-        firestore.collection("dispositivos").addSnapshotListener { snapshot, _ ->
-            dispositivos.clear()
-            dispositivos.addAll(DispositivosBD.obtenerDispositivos()) // Agregar todos los dispositivos
-            snapshot?.documents?.forEach { document ->
-                val nombre = document.getString("nombre") ?: "Desconocido"
-                dispositivos.add(SensorTemperaturaHumedadDB(nombre = nombre))
+        try {
+            firestore.collection("dispositivos").addSnapshotListener { snapshot, _ ->
+                dispositivos.clear()
+                if (snapshot == null || snapshot.isEmpty) {
+                    sinRegistros = true
+                } else {
+                    sinRegistros = false
+                    snapshot.documents.forEach { document ->
+                        val nombre = document.getString("nombre") ?: "Desconocido"
+                        dispositivos.add(SensorTemperaturaHumedadDB(nombre = nombre))
+                    }
+                }
             }
+        } catch (e: Exception) {
+            Log.e("Firestore", "Error al recuperar dispositivos: ${e.message}")
         }
     }
 
@@ -57,7 +62,7 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
                 },
                 actions = { // 🔴 Botón para Cerrar Sesión
                     TextButton(onClick = {
-                        authViewModel.logout() // Cerrar sesión
+                        authViewModel.logout()
                         navController.navigate("login") {
                             popUpTo("pantalla_inicio") { inclusive = true }
                         }
@@ -79,18 +84,22 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White) // Fondo blanco
+                .background(Color.White)
                 .padding(paddingValues)
                 .padding(16.dp),
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Lista de Dispositivos", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text("Lista de Dispositivos", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
             Spacer(modifier = Modifier.height(16.dp))
 
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(dispositivos) { dispositivo ->
-                    DispositivoCard(dispositivo)
+            if (sinRegistros) {
+                Text("SIN REGISTROS", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
+            } else {
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    items(dispositivos) { dispositivo ->
+                        DispositivoCard(dispositivo)
+                    }
                 }
             }
         }
@@ -109,39 +118,39 @@ fun DispositivoCard(dispositivo: DispositivoBD) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = "Nombre: ${dispositivo.nombre}", fontWeight = FontWeight.Bold, fontSize = 18.sp)
             when (dispositivo) {
-                is com.example.monitorizaciondedispositivos.modelos.SensorTemperaturaHumedadDB -> {
+                is SensorTemperaturaHumedadDB -> {
                     Text("Rango Temperatura: ${dispositivo.rangoTemperatura}")
                     Text("Rango Humedad: ${dispositivo.rangoHumedad}")
                 }
-                is com.example.monitorizaciondedispositivos.modelos.SensorMovimientoDB -> {
+                is SensorMovimientoDB -> {
                     Text("Distancia Detección: ${dispositivo.distanciaDeteccion}m")
                     Text("Ángulo Detección: ${dispositivo.anguloDeteccion}°")
                 }
-                is com.example.monitorizaciondedispositivos.modelos.SensorAperturaDB -> {
+                is SensorAperturaDB -> {
                     Text("Tipo de Puerta: ${dispositivo.tipoPuerta}")
                     Text("Sensibilidad: ${dispositivo.sensibilidad}")
                 }
-                is com.example.monitorizaciondedispositivos.modelos.ReleInteligenteDB -> {
+                is ReleInteligenteDB -> {
                     Text("Capacidad Corriente: ${dispositivo.capacidadCorriente}A")
                     Text("Voltaje Soportado: ${dispositivo.voltajeSoportado}V")
                 }
-                is com.example.monitorizaciondedispositivos.modelos.ActuadorValvulaDB -> {
+                is ActuadorValvulaDB -> {
                     Text("Tipo de Válvula: ${dispositivo.tipoValvula}")
                     Text("Presión Máxima: ${dispositivo.presionMaxima} bar")
                 }
-                is com.example.monitorizaciondedispositivos.modelos.ServomotorDB -> {
+                is ServomotorDB -> {
                     Text("Rango Rotación: ${dispositivo.rangoRotacion}°")
                     Text("Par Máximo: ${dispositivo.parMaximo} Nm")
                 }
-                is com.example.monitorizaciondedispositivos.modelos.CamaraIPDB -> {
+                is CamaraIPDB -> {
                     Text("Resolución: ${dispositivo.resolucion}")
                     Text("Visión Nocturna: ${if (dispositivo.visionNocturna) "Sí" else "No"}")
                 }
-                is com.example.monitorizaciondedispositivos.modelos.ControladorClimaDB -> {
+                is ControladorClimaDB -> {
                     Text("Soporta HVAC: ${if (dispositivo.soporteHVAC) "Sí" else "No"}")
                     Text("Capacidad BTU: ${dispositivo.capacidadBTU}")
                 }
-                is com.example.monitorizaciondedispositivos.modelos.EstacionMeteorologicaDB -> {
+                is EstacionMeteorologicaDB -> {
                     Text("Sensores: ${dispositivo.sensores.joinToString(", ")}")
                     Text("Rango de Operación: ${dispositivo.rangoOperacion}")
                 }
