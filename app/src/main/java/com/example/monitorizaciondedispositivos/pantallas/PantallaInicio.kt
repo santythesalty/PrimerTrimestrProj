@@ -38,8 +38,8 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
                 snapshot.documents.forEach { document ->
                     val tipo = document.getString("tipo") ?: ""
                     val nombre = document.getString("nombre") ?: "Desconocido"
+                    val id = document.id
 
-                    // Convertir según el tipo guardado en Firestore
                     val dispositivo = when (tipo) {
                         "SensorTemperaturaHumedadDB" -> SensorTemperaturaHumedadDB(
                             nombre = nombre,
@@ -76,30 +76,6 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Gestión de Dispositivos") },
-                navigationIcon = {
-                    IconButton(onClick = {
-                        navController.navigate("login") {
-                            popUpTo("pantalla_inicio") { inclusive = true }
-                        }
-                    }) {
-                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Volver a Login")
-                    }
-                },
-                actions = {
-                    TextButton(onClick = {
-                        authViewModel.logout()
-                        navController.navigate("login") {
-                            popUpTo("pantalla_inicio") { inclusive = true }
-                        }
-                    }) {
-                        Text("Salir", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-            )
-        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { navController.navigate("pantalla_agregar_dispositivo") },
@@ -126,7 +102,7 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
             } else {
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                     items(dispositivos) { dispositivo ->
-                        DispositivoCard(dispositivo)
+                        DispositivoCard(dispositivo, firestore)
                     }
                 }
             }
@@ -135,7 +111,7 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
 }
 
 @Composable
-fun DispositivoCard(dispositivo: DispositivoBD) {
+fun DispositivoCard(dispositivo: DispositivoBD, firestore: FirebaseFirestore) {
     Card(
         shape = RoundedCornerShape(8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
@@ -183,7 +159,17 @@ fun DispositivoCard(dispositivo: DispositivoBD) {
                     Text("Rango de Operación: ${dispositivo.rangoOperacion}")
                 }
             }
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(onClick = {
+                firestore.collection("dispositivos").whereEqualTo("nombre", dispositivo.nombre)
+                    .get().addOnSuccessListener { result ->
+                        for (document in result) {
+                            firestore.collection("dispositivos").document(document.id).delete()
+                        }
+                    }
+            }) {
+                Text("Borrar")
+            }
         }
     }
 }
-
