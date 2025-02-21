@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,7 +18,6 @@ import androidx.navigation.NavHostController
 import com.google.firebase.firestore.FirebaseFirestore
 import com.example.monitorizaciondedispositivos.data.AuthViewModel
 import com.example.monitorizaciondedispositivos.modelos.*
-import android.util.Log
 import androidx.compose.foundation.shape.RoundedCornerShape
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -76,6 +75,21 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
     }
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Usuario:", fontSize = 18.sp, fontWeight = FontWeight.Bold) },
+                actions = {
+                    IconButton(onClick = {
+                        authViewModel.logout()
+                        navController.navigate("login") {
+                            popUpTo("pantalla_inicio") { inclusive = true }
+                        }
+                    }) {
+                        Icon(Icons.Filled.Logout, contentDescription = "Cerrar sesión")
+                    }
+                }
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { navController.navigate("pantalla_agregar_dispositivo") },
@@ -138,37 +152,15 @@ fun DispositivoCard(dispositivo: DispositivoBD, firestore: FirebaseFirestore) {
                     Text("Capacidad Corriente: ${dispositivo.capacidadCorriente}A")
                     Text("Voltaje Soportado: ${dispositivo.voltajeSoportado}V")
                 }
-                is ActuadorValvulaDB -> {
-                    Text("Tipo de Válvula: ${dispositivo.tipoValvula}")
-                    Text("Presión Máxima: ${dispositivo.presionMaxima} bar")
-                }
-                is ServomotorDB -> {
-                    Text("Rango Rotación: ${dispositivo.rangoRotacion}°")
-                    Text("Par Máximo: ${dispositivo.parMaximo} Nm")
-                }
                 is CamaraIPDB -> {
                     Text("Resolución: ${dispositivo.resolucion}")
                     Text("Visión Nocturna: ${if (dispositivo.visionNocturna) "Sí" else "No"}")
                 }
-                is ControladorClimaDB -> {
-                    Text("Soporta HVAC: ${if (dispositivo.soporteHVAC) "Sí" else "No"}")
-                    Text("Capacidad BTU: ${dispositivo.capacidadBTU}")
-                }
-                is EstacionMeteorologicaDB -> {
-                    Text("Sensores: ${dispositivo.sensores.joinToString(", ")}")
-                    Text("Rango de Operación: ${dispositivo.rangoOperacion}")
-                }
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(onClick = {
-                firestore.collection("dispositivos").whereEqualTo("nombre", dispositivo.nombre)
-                    .get().addOnSuccessListener { result ->
-                        for (document in result) {
-                            firestore.collection("dispositivos").document(document.id).delete()
-                        }
-                    }
-            }) {
-                Text("Borrar")
+
+                is ActuadorValvulaDB -> TODO()
+                is ControladorClimaDB -> TODO()
+                is EstacionMeteorologicaDB -> TODO()
+                is ServomotorDB -> TODO()
             }
         }
     }
