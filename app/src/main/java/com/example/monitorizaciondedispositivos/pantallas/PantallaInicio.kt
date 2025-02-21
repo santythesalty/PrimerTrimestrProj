@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,7 +18,6 @@ import androidx.navigation.NavHostController
 import com.google.firebase.firestore.FirebaseFirestore
 import com.example.monitorizaciondedispositivos.data.AuthViewModel
 import com.example.monitorizaciondedispositivos.modelos.*
-import android.util.Log
 import androidx.compose.foundation.shape.RoundedCornerShape
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,7 +37,6 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
                 snapshot.documents.forEach { document ->
                     val tipo = document.getString("tipo") ?: ""
                     val nombre = document.getString("nombre") ?: "Desconocido"
-                    val id = document.id
 
                     val dispositivo = when (tipo) {
                         "SensorTemperaturaHumedadDB" -> SensorTemperaturaHumedadDB(
@@ -50,16 +48,6 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
                             nombre = nombre,
                             distanciaDeteccion = document.getLong("distanciaDeteccion")?.toInt() ?: 0,
                             anguloDeteccion = document.getLong("anguloDeteccion")?.toInt() ?: 0
-                        )
-                        "SensorAperturaDB" -> SensorAperturaDB(
-                            nombre = nombre,
-                            tipoPuerta = document.getString("tipoPuerta") ?: "",
-                            sensibilidad = document.getString("sensibilidad") ?: ""
-                        )
-                        "ReleInteligenteDB" -> ReleInteligenteDB(
-                            nombre = nombre,
-                            capacidadCorriente = document.getDouble("capacidadCorriente") ?: 0.0,
-                            voltajeSoportado = document.getDouble("voltajeSoportado") ?: 0.0
                         )
                         "CamaraIPDB" -> CamaraIPDB(
                             nombre = nombre,
@@ -76,6 +64,26 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
     }
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Lista de Dispositivos") },
+                actions = {
+                    // 🔴 Botón para Cerrar Sesión
+                    IconButton(onClick = {
+                        authViewModel.logout() // Cerrar sesión
+                        navController.navigate("login") {
+                            popUpTo("pantalla_inicio") { inclusive = true }
+                        }
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.ExitToApp, // Ícono de salida
+                            contentDescription = "Cerrar Sesión",
+                            tint = Color.Black // Ícono negro
+                        )
+                    }
+                }
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { navController.navigate("pantalla_agregar_dispositivo") },
@@ -94,7 +102,6 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Lista de Dispositivos", fontSize = 20.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(16.dp))
 
             if (sinRegistros) {
@@ -112,6 +119,8 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
 
 @Composable
 fun DispositivoCard(dispositivo: DispositivoBD, firestore: FirebaseFirestore) {
+    var showDialog by remember { mutableStateOf(false) }
+
     Card(
         shape = RoundedCornerShape(8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
@@ -130,45 +139,58 @@ fun DispositivoCard(dispositivo: DispositivoBD, firestore: FirebaseFirestore) {
                     Text("Distancia Detección: ${dispositivo.distanciaDeteccion}m")
                     Text("Ángulo Detección: ${dispositivo.anguloDeteccion}°")
                 }
-                is SensorAperturaDB -> {
-                    Text("Tipo de Puerta: ${dispositivo.tipoPuerta}")
-                    Text("Sensibilidad: ${dispositivo.sensibilidad}")
-                }
-                is ReleInteligenteDB -> {
-                    Text("Capacidad Corriente: ${dispositivo.capacidadCorriente}A")
-                    Text("Voltaje Soportado: ${dispositivo.voltajeSoportado}V")
-                }
-                is ActuadorValvulaDB -> {
-                    Text("Tipo de Válvula: ${dispositivo.tipoValvula}")
-                    Text("Presión Máxima: ${dispositivo.presionMaxima} bar")
-                }
-                is ServomotorDB -> {
-                    Text("Rango Rotación: ${dispositivo.rangoRotacion}°")
-                    Text("Par Máximo: ${dispositivo.parMaximo} Nm")
-                }
                 is CamaraIPDB -> {
                     Text("Resolución: ${dispositivo.resolucion}")
                     Text("Visión Nocturna: ${if (dispositivo.visionNocturna) "Sí" else "No"}")
                 }
-                is ControladorClimaDB -> {
-                    Text("Soporta HVAC: ${if (dispositivo.soporteHVAC) "Sí" else "No"}")
-                    Text("Capacidad BTU: ${dispositivo.capacidadBTU}")
-                }
-                is EstacionMeteorologicaDB -> {
-                    Text("Sensores: ${dispositivo.sensores.joinToString(", ")}")
-                    Text("Rango de Operación: ${dispositivo.rangoOperacion}")
-                }
+
+                is ActuadorValvulaDB -> TODO()
+                is ControladorClimaDB -> TODO()
+                is EstacionMeteorologicaDB -> TODO()
+                is ReleInteligenteDB -> TODO()
+                is SensorAperturaDB -> TODO()
+                is ServomotorDB -> TODO()
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Button(onClick = {
-                firestore.collection("dispositivos").whereEqualTo("nombre", dispositivo.nombre)
-                    .get().addOnSuccessListener { result ->
-                        for (document in result) {
-                            firestore.collection("dispositivos").document(document.id).delete()
+
+            // 🔴 Botón de Borrar con Confirmación
+            Button(
+                onClick = { showDialog = true },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+            ) {
+                Text("Borrar", color = Color.White)
+            }
+
+            // 🔴 Diálogo de Confirmación
+            if (showDialog) {
+                AlertDialog(
+                    onDismissRequest = { showDialog = false },
+                    title = { Text("Confirmar Eliminación") },
+                    text = { Text("¿Estás seguro de que deseas eliminar este dispositivo? Esta acción no se puede deshacer.") },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                firestore.collection("dispositivos")
+                                    .whereEqualTo("nombre", dispositivo.nombre)
+                                    .get()
+                                    .addOnSuccessListener { result ->
+                                        for (document in result) {
+                                            firestore.collection("dispositivos").document(document.id).delete()
+                                        }
+                                    }
+                                showDialog = false
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                        ) {
+                            Text("Eliminar", color = Color.White)
+                        }
+                    },
+                    dismissButton = {
+                        Button(onClick = { showDialog = false }) {
+                            Text("Cancelar")
                         }
                     }
-            }) {
-                Text("Borrar")
+                )
             }
         }
     }
