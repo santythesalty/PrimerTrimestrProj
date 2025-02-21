@@ -77,7 +77,7 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Usuario:", fontSize = 18.sp, fontWeight = FontWeight.Bold) },
+                title = { Text("Usuario:TODO", fontSize = 18.sp, fontWeight = FontWeight.Bold) },
                 actions = {
                     IconButton(onClick = {
                         authViewModel.logout()
