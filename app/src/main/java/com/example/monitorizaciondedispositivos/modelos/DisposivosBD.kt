@@ -68,6 +68,46 @@ data class EstacionMeteorologicaDB(
     val rangoOperacion: String = ""
 ) : DispositivoBD(nombre)
 
+data class SensorCalidadAireDB(
+    override val nombre: String = "",
+    val userid: String = "",
+    val nivelCO2: Int = 0,
+    val nivelVOC: Int = 0,
+    val calidadAire: String = ""
+) : DispositivoBD(nombre)
+
+data class SensorInundacionDB(
+    override val nombre: String = "",
+    val userid: String = "",
+    val nivelSensibilidad: String = "",
+    val areaCobertura: Double = 0.0,
+    val tipoSensor: String = ""
+) : DispositivoBD(nombre)
+
+data class PanelSolarDB(
+    override val nombre: String = "",
+    val userid: String = "",
+    val potenciaMaxima: Int = 0,
+    val eficiencia: Double = 0.0,
+    val orientacion: String = ""
+) : DispositivoBD(nombre)
+
+data class SensorPresionDB(
+    override val nombre: String = "",
+    val userid: String = "",
+    val rangoPresion: String = "",
+    val precision: Double = 0.0,
+    val unidadMedida: String = ""
+) : DispositivoBD(nombre)
+
+data class SensorLuzDB(
+    override val nombre: String = "",
+    val userid: String = "",
+    val rangoLuminosidad: String = "",
+    val tipoLuz: String = "",
+    val sensibilidadEspectral: String = ""
+) : DispositivoBD(nombre)
+
 object DispositivosBD {
     fun obtenerDispositivos(): List<DispositivoBD> {
         return listOf(
@@ -79,7 +119,12 @@ object DispositivosBD {
             ServomotorDB(nombre = "Servomotor", rangoRotacion = 180, parMaximo = 2.5),
             CamaraIPDB(nombre = "Cámara IP", resolucion = "1080p", visionNocturna = true),
             ControladorClimaDB(nombre = "Controlador de Clima", soporteHVAC = true, capacidadBTU = 12000),
-            EstacionMeteorologicaDB(nombre = "Estación Meteorológica", sensores = listOf("Temperatura", "Humedad", "Presión"), rangoOperacion = "-10 a 50°C")
+            EstacionMeteorologicaDB(nombre = "Estación Meteorológica", sensores = listOf("Temperatura", "Humedad", "Presión"), rangoOperacion = "-10 a 50°C"),
+            SensorCalidadAireDB(nombre = "Sensor de Calidad del Aire", nivelCO2 = 400, nivelVOC = 100, calidadAire = "Buena"),
+            SensorInundacionDB(nombre = "Sensor de Inundación", nivelSensibilidad = "Alta", areaCobertura = 25.0, tipoSensor = "Conductivo"),
+            PanelSolarDB(nombre = "Panel Solar", potenciaMaxima = 400, eficiencia = 21.5, orientacion = "Sur"),
+            SensorPresionDB(nombre = "Sensor de Presión", rangoPresion = "0-100 bar", precision = 0.1, unidadMedida = "Bar"),
+            SensorLuzDB(nombre = "Sensor de Luz", rangoLuminosidad = "0-100000 lux", tipoLuz = "Visible", sensibilidadEspectral = "380-780nm")
         )
     }
 }

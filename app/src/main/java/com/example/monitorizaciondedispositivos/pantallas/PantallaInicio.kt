@@ -1,4 +1,3 @@
-
 package com.example.monitorizaciondedispositivos.pantallas
 
 import androidx.compose.foundation.background
@@ -54,6 +53,36 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
                             nombre = nombre,
                             resolucion = document.getString("resolucion") ?: "",
                             visionNocturna = document.getBoolean("visionNocturna") ?: false
+                        )
+                        "SensorCalidadAireDB" -> SensorCalidadAireDB(
+                            nombre = nombre,
+                            nivelCO2 = document.getLong("nivelCO2")?.toInt() ?: 0,
+                            nivelVOC = document.getLong("nivelVOC")?.toInt() ?: 0,
+                            calidadAire = document.getString("calidadAire") ?: ""
+                        )
+                        "SensorInundacionDB" -> SensorInundacionDB(
+                            nombre = nombre,
+                            nivelSensibilidad = document.getString("nivelSensibilidad") ?: "",
+                            areaCobertura = document.getDouble("areaCobertura") ?: 0.0,
+                            tipoSensor = document.getString("tipoSensor") ?: ""
+                        )
+                        "PanelSolarDB" -> PanelSolarDB(
+                            nombre = nombre,
+                            potenciaMaxima = document.getLong("potenciaMaxima")?.toInt() ?: 0,
+                            eficiencia = document.getDouble("eficiencia") ?: 0.0,
+                            orientacion = document.getString("orientacion") ?: ""
+                        )
+                        "SensorPresionDB" -> SensorPresionDB(
+                            nombre = nombre,
+                            rangoPresion = document.getString("rangoPresion") ?: "",
+                            precision = document.getDouble("precision") ?: 0.0,
+                            unidadMedida = document.getString("unidadMedida") ?: ""
+                        )
+                        "SensorLuzDB" -> SensorLuzDB(
+                            nombre = nombre,
+                            rangoLuminosidad = document.getString("rangoLuminosidad") ?: "",
+                            tipoLuz = document.getString("tipoLuz") ?: "",
+                            sensibilidadEspectral = document.getString("sensibilidadEspectral") ?: ""
                         )
                         else -> null
                     }
@@ -131,6 +160,11 @@ fun DispositivoCard(dispositivo: DispositivoBD, firestore: FirebaseFirestore) {
         is SensorTemperaturaHumedadDB -> Icons.Default.Thermostat
         is SensorMovimientoDB -> Icons.Default.DirectionsRun
         is CamaraIPDB -> Icons.Default.Videocam
+        is SensorCalidadAireDB -> Icons.Default.AirplanemodeActive
+        is SensorInundacionDB -> Icons.Default.WaterDrop
+        is PanelSolarDB -> Icons.Default.WbSunny
+        is SensorPresionDB -> Icons.Default.Speed
+        is SensorLuzDB -> Icons.Default.Lightbulb
         else -> Icons.Default.Devices
     }
 
@@ -164,7 +198,31 @@ fun DispositivoCard(dispositivo: DispositivoBD, firestore: FirebaseFirestore) {
                         Text("Resolución: ${dispositivo.resolucion}")
                         Text("Visión Nocturna: ${if (dispositivo.visionNocturna) "Sí" else "No"}")
                     }
-
+                    is SensorCalidadAireDB -> {
+                        Text("Nivel CO2: ${dispositivo.nivelCO2} ppm")
+                        Text("Nivel VOC: ${dispositivo.nivelVOC} ppb")
+                        Text("Calidad del Aire: ${dispositivo.calidadAire}")
+                    }
+                    is SensorInundacionDB -> {
+                        Text("Sensibilidad: ${dispositivo.nivelSensibilidad}")
+                        Text("Área de Cobertura: ${dispositivo.areaCobertura}m²")
+                        Text("Tipo de Sensor: ${dispositivo.tipoSensor}")
+                    }
+                    is PanelSolarDB -> {
+                        Text("Potencia Máxima: ${dispositivo.potenciaMaxima}W")
+                        Text("Eficiencia: ${dispositivo.eficiencia}%")
+                        Text("Orientación: ${dispositivo.orientacion}")
+                    }
+                    is SensorPresionDB -> {
+                        Text("Rango de Presión: ${dispositivo.rangoPresion}")
+                        Text("Precisión: ${dispositivo.precision}")
+                        Text("Unidad: ${dispositivo.unidadMedida}")
+                    }
+                    is SensorLuzDB -> {
+                        Text("Rango Luminosidad: ${dispositivo.rangoLuminosidad}")
+                        Text("Tipo de Luz: ${dispositivo.tipoLuz}")
+                        Text("Sensibilidad Espectral: ${dispositivo.sensibilidadEspectral}")
+                    }
                     is ActuadorValvulaDB -> TODO()
                     is ControladorClimaDB -> TODO()
                     is EstacionMeteorologicaDB -> TODO()

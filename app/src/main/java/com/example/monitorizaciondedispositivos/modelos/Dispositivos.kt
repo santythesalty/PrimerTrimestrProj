@@ -82,3 +82,48 @@ data class EstacionMeteorologica(
     val sensores: List<String>,
     val rangoOperacion: String
 )
+
+data class SensorCalidadAire(
+    val id: String ?= null,
+    val userid: String?,
+    val nombre: String?,
+    val nivelCO2: Int,
+    val nivelVOC: Int,
+    val calidadAire: String
+)
+
+data class SensorInundacion(
+    val id: String ?= null,
+    val userid: String?,
+    val nombre: String?,
+    val nivelSensibilidad: String,
+    val areaCobertura: Double,
+    val tipoSensor: String
+)
+
+data class PanelSolar(
+    val id: String ?= null,
+    val userid: String?,
+    val nombre: String?,
+    val potenciaMaxima: Int,
+    val eficiencia: Double,
+    val orientacion: String
+)
+
+data class SensorPresion(
+    val id: String ?= null,
+    val userid: String?,
+    val nombre: String?,
+    val rangoPresion: String,
+    val precision: Double,
+    val unidadMedida: String
+)
+
+data class SensorLuz(
+    val id: String ?= null,
+    val userid: String?,
+    val nombre: String?,
+    val rangoLuminosidad: String,
+    val tipoLuz: String,
+    val sensibilidadEspectral: String
+)
