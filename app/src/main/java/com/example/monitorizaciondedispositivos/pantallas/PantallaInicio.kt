@@ -18,6 +18,7 @@ import androidx.navigation.NavHostController
 import com.google.firebase.firestore.FirebaseFirestore
 import com.example.monitorizaciondedispositivos.data.AuthViewModel
 import com.example.monitorizaciondedispositivos.modelos.*
+import com.example.monitorizaciondedispositivos.mqtt.MqttManager
 import androidx.compose.foundation.shape.RoundedCornerShape
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -26,6 +27,7 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
     val dispositivos = remember { mutableStateListOf<DispositivoBD>() }
     val firestore = FirebaseFirestore.getInstance()
     var sinRegistros by remember { mutableStateOf(true) }
+    val dispositivoDatos = remember { mutableStateMapOf<String, String>() }
 
     LaunchedEffect(Unit) {
         firestore.collection("dispositivos").addSnapshotListener { snapshot, _ ->
@@ -37,6 +39,7 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
                 snapshot.documents.forEach { document ->
                     val tipo = document.getString("tipo") ?: ""
                     val nombre = document.getString("nombre") ?: "Desconocido"
+                    val id = document.id
 
                     val dispositivo = when (tipo) {
                         "SensorTemperaturaHumedadDB" -> SensorTemperaturaHumedadDB(
@@ -86,22 +89,24 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
                         )
                         else -> null
                     }
-
                     dispositivo?.let { dispositivos.add(it) }
                 }
             }
         }
     }
+
+    LaunchedEffect(dispositivos) {
+        if (dispositivos.isNotEmpty()) {
+            MqttManager.connect(dispositivos.map { it.nombre }) { topic, message ->
+                dispositivoDatos[topic] = message
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        "Lista de Dispositivos",
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
-                },
+                title = { Text("Lista de Dispositivos", fontSize = 18.sp, fontWeight = FontWeight.Bold) },
                 actions = {
                     IconButton(onClick = {
                         authViewModel.logout()
@@ -109,11 +114,7 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
                             popUpTo("pantalla_inicio") { inclusive = true }
                         }
                     }) {
-                        Icon(
-                            imageVector = Icons.Default.ExitToApp,
-                            contentDescription = "Cerrar Sesión",
-                            tint = Color.Black
-                        )
+                        Icon(Icons.Filled.ExitToApp, contentDescription = "Cerrar sesión")
                     }
                 }
             )
@@ -136,6 +137,7 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Text("Lista de Dispositivos", fontSize = 20.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(16.dp))
 
             if (sinRegistros) {
@@ -143,7 +145,7 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
             } else {
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                     items(dispositivos) { dispositivo ->
-                        DispositivoCard(dispositivo, firestore)
+                        DispositivoCard(dispositivo, firestore, dispositivoDatos[dispositivo.nombre] ?: "No hay datos")
                     }
                 }
             }
@@ -151,8 +153,10 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
     }
 }
 
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DispositivoCard(dispositivo: DispositivoBD, firestore: FirebaseFirestore) {
+fun DispositivoCard(dispositivo: DispositivoBD, firestore: FirebaseFirestore, estado: String) {
     var showDialog by remember { mutableStateOf(false) }
     var expandedMenu by remember { mutableStateOf(false) }
 
@@ -185,6 +189,7 @@ fun DispositivoCard(dispositivo: DispositivoBD, firestore: FirebaseFirestore) {
 
             Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
                 Text(text = "Nombre: ${dispositivo.nombre}", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text("Estado: $estado")
                 when (dispositivo) {
                     is SensorTemperaturaHumedadDB -> {
                         Text("Rango Temperatura: ${dispositivo.rangoTemperatura}")
@@ -223,6 +228,7 @@ fun DispositivoCard(dispositivo: DispositivoBD, firestore: FirebaseFirestore) {
                         Text("Tipo de Luz: ${dispositivo.tipoLuz}")
                         Text("Sensibilidad Espectral: ${dispositivo.sensibilidadEspectral}")
                     }
+
                     is ActuadorValvulaDB -> TODO()
                     is ControladorClimaDB -> TODO()
                     is EstacionMeteorologicaDB -> TODO()
