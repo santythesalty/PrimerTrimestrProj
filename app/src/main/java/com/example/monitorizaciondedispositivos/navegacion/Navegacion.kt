@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.collectAsState
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -17,20 +18,24 @@ fun Navegacion(
     navController: NavHostController,
     authViewModel: AuthViewModel
 ) {
-    // Verificamos el estado de autenticación
-    var startDestination by remember { mutableStateOf("login") }
-
-    LaunchedEffect(Unit) {
-        if (authViewModel.isSignedIn()) {
-            startDestination = "pantalla_inicio"
+    val user by authViewModel.user.collectAsState(initial = null)
+    
+    // Determinar la pantalla inicial basada en el estado de autenticación
+    LaunchedEffect(user) {
+        if (user != null) {
+            navController.navigate("pantalla_inicio") {
+                popUpTo(0) { inclusive = true }
+            }
         } else {
-            startDestination = "login"
+            navController.navigate("login") {
+                popUpTo(0) { inclusive = true }
+            }
         }
     }
 
     NavHost(
         navController = navController,
-        startDestination = startDestination
+        startDestination = "login"  // Siempre comenzamos en login
     ) {
         composable("login") {
             LoginScreen(

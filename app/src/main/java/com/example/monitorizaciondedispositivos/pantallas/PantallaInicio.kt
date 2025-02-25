@@ -36,6 +36,9 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
 
+    // Recolectar el estado del usuario
+    val user by authViewModel.user.collectAsState()
+
     LaunchedEffect(refreshTrigger) {
         isLoading = true
         try {
@@ -87,6 +90,16 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
         }
     }
 
+    // Modificar el LaunchedEffect para usar el estado del usuario
+    LaunchedEffect(user) {
+        if (user == null) {
+            navController.navigate("login") {
+                // Limpiar todo el back stack cuando se hace logout
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
+
     DisposableEffect(Unit) {
         val topics = dispositivos.mapNotNull { it.topic }.distinct()
         MqttManager.connect(topics) { topic, message ->
@@ -115,7 +128,14 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
             TopAppBar(
                 title = { Text("Lista de Dispositivos") },
                 actions = {
-                    IconButton(onClick = { authViewModel.logout() }) {
+                    IconButton(
+                        onClick = { 
+                            // Primero desconectar MQTT
+                            MqttManager.disconnect()
+                            // Luego hacer logout
+                            authViewModel.logout()
+                        }
+                    ) {
                         Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Cerrar sesión")
                     }
                 }
@@ -182,6 +202,9 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
                                                 }
                                             }
                                     }
+                                },
+                                onDelete = {
+                                    refreshTrigger += 1
                                 }
                             )
                         }
@@ -195,7 +218,8 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
 @Composable
 fun DispositivoCard(
     dispositivo: DispositivoBD,
-    onStateChange: (Boolean) -> Unit
+    onStateChange: (Boolean) -> Unit,
+    onDelete: () -> Unit
 ) {
     val firestore = FirebaseFirestore.getInstance()
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -208,15 +232,30 @@ fun DispositivoCard(
             confirmButton = {
                 TextButton(
                     onClick = {
+                        // Buscar y eliminar solo el dispositivo específico
                         firestore.collection("dispositivos")
-                            .whereEqualTo("topic", dispositivo.topic)
+                            .whereEqualTo("nombre", dispositivo.nombre)  // Usar el nombre como identificador único
+                            .whereEqualTo("topic", dispositivo.topic)    // Añadir el topic para mayor precisión
+                            .limit(1)  // Limitar a 1 resultado
                             .get()
                             .addOnSuccessListener { result ->
-                                for (document in result) {
+                                if (!result.isEmpty) {
+                                    // Obtener el primer (y único) documento
+                                    val document = result.documents[0]
                                     document.reference.delete()
+                                        .addOnSuccessListener {
+                                            Log.d("DispositivoCard", "Dispositivo eliminado con éxito")
+                                            showDeleteDialog = false
+                                            onDelete()
+                                        }
+                                        .addOnFailureListener { e ->
+                                            Log.e("DispositivoCard", "Error al eliminar dispositivo", e)
+                                        }
                                 }
                             }
-                        showDeleteDialog = false
+                            .addOnFailureListener { e ->
+                                Log.e("DispositivoCard", "Error al buscar dispositivo", e)
+                            }
                     }
                 ) {
                     Text("Eliminar")
