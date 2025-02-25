@@ -8,14 +8,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -24,28 +23,24 @@ import androidx.navigation.NavHostController
 import com.google.firebase.firestore.FirebaseFirestore
 
 // Para los iconos personalizados
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Thermostat
-import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Sensors
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.DeviceHub
 import androidx.compose.material.icons.filled.Brightness6
 import androidx.compose.material.icons.filled.BrightnessHigh
 import androidx.compose.material.icons.filled.BrightnessLow
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Power
-import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material.icons.filled.Air
 import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Topic
 import com.example.monitorizaciondedispositivos.mqtt.MqttManager
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -73,8 +68,6 @@ fun PantallaAgregarDispositivo(navController: NavHostController) {
     var presionMaxima by remember { mutableStateOf("") }
     var soporteHVAC by remember { mutableStateOf(false) }
     var capacidadBTU by remember { mutableStateOf("") }
-    var sensores by remember { mutableStateOf("") }
-    var rangoOperacion by remember { mutableStateOf("") }
     var nivelCO2 by remember { mutableStateOf("") }
     var nivelVOC by remember { mutableStateOf("") }
     var calidadAire by remember { mutableStateOf("") }
@@ -100,10 +93,25 @@ fun PantallaAgregarDispositivo(navController: NavHostController) {
     //Variables del Mqtt
     var estadoDispositivo by remember { mutableStateOf("Cargando...") }
 
-    LaunchedEffect(nombre) {
-        if (nombre.isNotEmpty()) {
-            MqttManager.connect(listOf(nombre)) { topic, message ->
-                if (topic == nombre) {
+    // Agregar variable para el topic
+    var topic by remember { mutableStateOf("") }
+
+    // Agregar el estado del switch
+    var isOn by remember { mutableStateOf(false) }
+
+    // Variables para Servomotor
+    var rangoRotacion by remember { mutableStateOf("") }
+    var parMaximo by remember { mutableStateOf("") }
+    
+    // Variables para Estación Meteorológica
+    var rangoOperacion by remember { mutableStateOf("") }
+
+    LaunchedEffect(topic) {
+        if (topic.isNotEmpty()) {
+            MqttManager.connect(listOf(topic)) { receivedTopic, message ->
+                if (receivedTopic == topic) {
+                    val newState = message == "ON"
+                    isOn = newState
                     estadoDispositivo = message
                 }
             }
@@ -123,7 +131,7 @@ fun PantallaAgregarDispositivo(navController: NavHostController) {
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
-                            Icons.Default.ArrowBack,
+                            Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Volver",
                             tint = MaterialTheme.colorScheme.primary
                         )
@@ -256,7 +264,53 @@ fun PantallaAgregarDispositivo(navController: NavHostController) {
                         )
                     )
 
-                    
+                    OutlinedTextField(
+                        value = topic,
+                        onValueChange = { topic = it },
+                        label = { Text("Topic MQTT") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                        ),
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Topic,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    )
+
+                    Switch(
+                        checked = isOn,
+                        onCheckedChange = { newState ->
+                            isOn = newState
+                            topic.takeIf { it.isNotEmpty() }?.let { topicValue ->
+                                // Publicar el cambio en MQTT
+                                MqttManager.publish(topicValue, if (newState) "ON" else "OFF")
+                                
+                                // Actualizar todos los dispositivos existentes con el mismo topic
+                                firestore.collection("dispositivos")
+                                    .whereEqualTo("topic", topicValue)
+                                    .get()
+                                    .addOnSuccessListener { result ->
+                                        for (document in result) {
+                                            firestore.collection("dispositivos")
+                                                .document(document.id)
+                                                .update("estado", newState)
+                                        }
+                                    }
+                            }
+                        },
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = MaterialTheme.colorScheme.primary,
+                            checkedTrackColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    )
+
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // Mostrar los campos según el tipo de dispositivo seleccionado
@@ -449,6 +503,21 @@ fun PantallaAgregarDispositivo(navController: NavHostController) {
                                         tint = MaterialTheme.colorScheme.primary
                                     )
                                 }
+                            )
+                        }
+                        "Servomotor" -> {
+                            OutlinedTextField(
+                                value = rangoRotacion,
+                                onValueChange = { rangoRotacion = it },
+                                label = { Text("Rango de Rotación (grados)") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            
+                            OutlinedTextField(
+                                value = parMaximo,
+                                onValueChange = { parMaximo = it },
+                                label = { Text("Par Máximo (Nm)") },
+                                modifier = Modifier.fillMaxWidth()
                             )
                         }
                         "Cámara IP" -> {
@@ -785,11 +854,17 @@ fun PantallaAgregarDispositivo(navController: NavHostController) {
                                 }
                             )
                         }
+                        "Estación Meteorológica" -> {
+                            OutlinedTextField(
+                                value = rangoOperacion,
+                                onValueChange = { rangoOperacion = it },
+                                label = { Text("Rango de Operación") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
                 }
             }
-
-
 
             // Botón de guardar mejorado
             Button(
@@ -807,6 +882,42 @@ fun PantallaAgregarDispositivo(navController: NavHostController) {
                             dispositivo["nombre"] = nombre
                             dispositivo["distanciaDeteccion"] = distanciaDeteccion.toIntOrNull() ?: 0
                             dispositivo["anguloDeteccion"] = anguloDeteccion.toIntOrNull() ?: 0
+                        }
+                        "Sensor de Apertura" -> {
+                            dispositivo["tipo"] = "SensorAperturaDB"
+                            dispositivo["nombre"] = nombre
+                            dispositivo["tipoPuerta"] = tipoPuerta
+                            dispositivo["sensibilidad"] = sensibilidad
+                        }
+                        "Relé Inteligente" -> {
+                            dispositivo["tipo"] = "ReleInteligenteDB"
+                            dispositivo["nombre"] = nombre
+                            dispositivo["capacidadCorriente"] = capacidadCorriente.toDoubleOrNull() ?: 0.0
+                            dispositivo["voltajeSoportado"] = voltajeSoportado.toDoubleOrNull() ?: 0.0
+                        }
+                        "Actuador de Válvula" -> {
+                            dispositivo["tipo"] = "ActuadorValvulaDB"
+                            dispositivo["nombre"] = nombre
+                            dispositivo["tipoValvula"] = tipoValvula
+                            dispositivo["presionMaxima"] = presionMaxima.toDoubleOrNull() ?: 0.0
+                        }
+                        "Servomotor" -> {
+                            dispositivo["tipo"] = "ServomotorDB"
+                            dispositivo["nombre"] = nombre
+                            dispositivo["rangoRotacion"] = rangoRotacion.toIntOrNull() ?: 0
+                            dispositivo["parMaximo"] = parMaximo.toDoubleOrNull() ?: 0.0
+                        }
+                        "Cámara IP" -> {
+                            dispositivo["tipo"] = "CamaraIPDB"
+                            dispositivo["nombre"] = nombre
+                            dispositivo["resolucion"] = resolucion
+                            dispositivo["visionNocturna"] = visionNocturna
+                        }
+                        "Controlador de Clima" -> {
+                            dispositivo["tipo"] = "ControladorClimaDB"
+                            dispositivo["nombre"] = nombre
+                            dispositivo["soporteHVAC"] = soporteHVAC
+                            dispositivo["capacidadBTU"] = capacidadBTU.toIntOrNull() ?: 0
                         }
                         "Sensor de Calidad del Aire" -> {
                             dispositivo["tipo"] = "SensorCalidadAireDB"
@@ -843,18 +954,31 @@ fun PantallaAgregarDispositivo(navController: NavHostController) {
                             dispositivo["tipoLuz"] = tipoLuz
                             dispositivo["sensibilidadEspectral"] = sensibilidadEspectral
                         }
-                        else -> {
-                            dispositivo["tipo"] = "Desconocido"
+                        "Estación Meteorológica" -> {
+                            dispositivo["tipo"] = "EstacionMeteorologicaDB"
                             dispositivo["nombre"] = nombre
+                            dispositivo["rangoOperacion"] = rangoOperacion
                         }
                     }
+                    // Añadir campos comunes
+                    dispositivo["topic"] = topic
+                    dispositivo["estado"] = isOn
                     
-                    firestore.collection("dispositivos").add(dispositivo)
-                        .addOnSuccessListener {
-                            navController.popBackStack()
-                        }
-                        .addOnFailureListener { e ->
-                            // Manejar el error
+                    firestore.collection("dispositivos")
+                        .whereEqualTo("topic", topic)
+                        .get()
+                        .addOnSuccessListener { result ->
+                            if (result.isEmpty || result.documents.any { it.getString("topic") == topic }) {
+                                dispositivo["topic"] = topic
+                                dispositivo["estado"] = isOn
+                                
+                                firestore.collection("dispositivos").add(dispositivo)
+                                    .addOnSuccessListener {
+                                        navController.popBackStack()
+                                    }
+                            } else {
+                                // Mostrar error de topic duplicado si no se desea compartir
+                            }
                         }
                 },
                 modifier = Modifier

@@ -1,4 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Monitorizacion de dispositivos</string>
     <string name="default_web_client_id" translatable="false">294080084146-fmo94jrkmifpk98vu86m6htntln0batk.apps.googleusercontent.com</string>
+    <string name="hint_topic">Ingresa el topic</string>
+    <string name="switch_label">Estado</string>
+    <string name="devices_title">Dispositivos</string>
+    <string name="add_device">Agregar dispositivo</string>
 </resources>

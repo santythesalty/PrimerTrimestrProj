@@ -58,7 +58,10 @@ android {
 }
 
 dependencies {
+    // Dependencias MQTT
     implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
+    implementation("org.eclipse.paho:org.eclipse.paho.android.service:1.1.1")
+    
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -91,6 +94,7 @@ dependencies {
     implementation ("com.google.android.gms:play-services-auth:20.6.0")
 
     implementation(libs.firebase.firestore)
+    implementation(libs.androidx.appcompat)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

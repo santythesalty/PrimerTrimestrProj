@@ -1,112 +1,153 @@
 package com.example.monitorizaciondedispositivos.modelos
 
+import DispositivoBase
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed class DispositivoBD(open val nombre: String)
+sealed class DispositivoBD : DispositivoBase {
+    @SerialName("nombre_dispositivo")
+    abstract override val nombre: String
+    
+    @SerialName("topic_dispositivo")
+    abstract override val topic: String?
+    
+    @SerialName("estado_dispositivo")
+    abstract override val estado: Boolean
+}
 
+@Serializable
 data class SensorTemperaturaHumedadDB(
-    override val nombre: String = "",
+    @SerialName("nombre") override val nombre: String = "",
+    @SerialName("topic") override val topic: String? = null,
+    @SerialName("estado") override val estado: Boolean = false,
     val userid: String = "",
     val rangoTemperatura: String = "",
     val rangoHumedad: String = ""
-) : DispositivoBD(nombre)
+) : DispositivoBD()
 
+@Serializable
 data class SensorMovimientoDB(
-    override val nombre: String = "",
+    @SerialName("nombre") override val nombre: String = "",
+    @SerialName("topic") override val topic: String? = null,
+    @SerialName("estado") override val estado: Boolean = false,
     val userid: String = "",
     val distanciaDeteccion: Int = 0,
     val anguloDeteccion: Int = 0
-) : DispositivoBD(nombre)
+) : DispositivoBD()
 
 data class SensorAperturaDB(
     override val nombre: String = "",
+    override val topic: String? = null,
+    override val estado: Boolean = false,
     val userid: String = "",
     val tipoPuerta: String = "",
     val sensibilidad: String = ""
-) : DispositivoBD(nombre)
+) : DispositivoBD()
 
 data class ReleInteligenteDB(
     override val nombre: String = "",
+    override val topic: String? = null,
+    override val estado: Boolean = false,
     val userid: String = "",
     val capacidadCorriente: Double = 0.0,
     val voltajeSoportado: Double = 0.0
-) : DispositivoBD(nombre)
+) : DispositivoBD()
 
 data class ActuadorValvulaDB(
     override val nombre: String = "",
+    override val topic: String? = null,
+    override val estado: Boolean = false,
     val userid: String = "",
     val tipoValvula: String = "",
     val presionMaxima: Double = 0.0
-) : DispositivoBD(nombre)
+) : DispositivoBD()
 
 data class ServomotorDB(
     override val nombre: String = "",
+    override val topic: String? = null,
+    override val estado: Boolean = false,
     val userid: String = "",
     val rangoRotacion: Int = 0,
     val parMaximo: Double = 0.0
-) : DispositivoBD(nombre)
+) : DispositivoBD()
 
 data class CamaraIPDB(
     override val nombre: String = "",
+    override val topic: String? = null,
+    override val estado: Boolean = false,
     val userid: String = "",
     val resolucion: String = "",
     val visionNocturna: Boolean = false
-) : DispositivoBD(nombre)
+) : DispositivoBD()
 
 data class ControladorClimaDB(
     override val nombre: String = "",
+    override val topic: String? = null,
+    override val estado: Boolean = false,
     val userid: String = "",
     val soporteHVAC: Boolean = false,
     val capacidadBTU: Int = 0
-) : DispositivoBD(nombre)
+) : DispositivoBD()
 
 data class EstacionMeteorologicaDB(
     override val nombre: String = "",
+    override val topic: String? = null,
+    override val estado: Boolean = false,
     val userid: String = "",
     val sensores: List<String> = emptyList(),
     val rangoOperacion: String = ""
-) : DispositivoBD(nombre)
+) : DispositivoBD()
 
 data class SensorCalidadAireDB(
     override val nombre: String = "",
+    override val topic: String? = null,
+    override val estado: Boolean = false,
     val userid: String = "",
     val nivelCO2: Int = 0,
     val nivelVOC: Int = 0,
     val calidadAire: String = ""
-) : DispositivoBD(nombre)
+) : DispositivoBD()
 
 data class SensorInundacionDB(
     override val nombre: String = "",
+    override val topic: String? = null,
+    override val estado: Boolean = false,
     val userid: String = "",
     val nivelSensibilidad: String = "",
     val areaCobertura: Double = 0.0,
     val tipoSensor: String = ""
-) : DispositivoBD(nombre)
+) : DispositivoBD()
 
 data class PanelSolarDB(
     override val nombre: String = "",
+    override val topic: String? = null,
+    override val estado: Boolean = false,
     val userid: String = "",
     val potenciaMaxima: Int = 0,
     val eficiencia: Double = 0.0,
     val orientacion: String = ""
-) : DispositivoBD(nombre)
+) : DispositivoBD()
 
 data class SensorPresionDB(
     override val nombre: String = "",
+    override val topic: String? = null,
+    override val estado: Boolean = false,
     val userid: String = "",
     val rangoPresion: String = "",
     val precision: Double = 0.0,
     val unidadMedida: String = ""
-) : DispositivoBD(nombre)
+) : DispositivoBD()
 
 data class SensorLuzDB(
     override val nombre: String = "",
+    override val topic: String? = null,
+    override val estado: Boolean = false,
     val userid: String = "",
     val rangoLuminosidad: String = "",
     val tipoLuz: String = "",
     val sensibilidadEspectral: String = ""
-) : DispositivoBD(nombre)
+) : DispositivoBD()
 
 object DispositivosBD {
     fun obtenerDispositivos(): List<DispositivoBD> {

@@ -20,132 +20,171 @@ import com.example.monitorizaciondedispositivos.data.AuthViewModel
 import com.example.monitorizaciondedispositivos.modelos.*
 import com.example.monitorizaciondedispositivos.mqtt.MqttManager
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.automirrored.filled.DirectionsRun
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import android.util.Log
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewModel) {
-    val dispositivos = remember { mutableStateListOf<DispositivoBD>() }
     val firestore = FirebaseFirestore.getInstance()
-    var sinRegistros by remember { mutableStateOf(true) }
+    var dispositivos by remember { mutableStateOf(listOf<DispositivoBD>()) }
+    var showDialog by remember { mutableStateOf(false) }
+    var refreshTrigger by remember { mutableStateOf(0) }
     val dispositivoDatos = remember { mutableStateMapOf<String, String>() }
+    var sinRegistros by remember { mutableStateOf(true) }
+    var isLoading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(Unit) {
-        firestore.collection("dispositivos").addSnapshotListener { snapshot, _ ->
-            dispositivos.clear()
-            if (snapshot == null || snapshot.isEmpty) {
-                sinRegistros = true
-            } else {
-                sinRegistros = false
-                snapshot.documents.forEach { document ->
-                    val tipo = document.getString("tipo") ?: ""
-                    val nombre = document.getString("nombre") ?: "Desconocido"
-                    val id = document.id
-
-                    val dispositivo = when (tipo) {
-                        "SensorTemperaturaHumedadDB" -> SensorTemperaturaHumedadDB(
-                            nombre = nombre,
-                            rangoTemperatura = document.getString("rangoTemperatura") ?: "",
-                            rangoHumedad = document.getString("rangoHumedad") ?: ""
-                        )
-                        "SensorMovimientoDB" -> SensorMovimientoDB(
-                            nombre = nombre,
-                            distanciaDeteccion = document.getLong("distanciaDeteccion")?.toInt() ?: 0,
-                            anguloDeteccion = document.getLong("anguloDeteccion")?.toInt() ?: 0
-                        )
-                        "CamaraIPDB" -> CamaraIPDB(
-                            nombre = nombre,
-                            resolucion = document.getString("resolucion") ?: "",
-                            visionNocturna = document.getBoolean("visionNocturna") ?: false
-                        )
-                        "SensorCalidadAireDB" -> SensorCalidadAireDB(
-                            nombre = nombre,
-                            nivelCO2 = document.getLong("nivelCO2")?.toInt() ?: 0,
-                            nivelVOC = document.getLong("nivelVOC")?.toInt() ?: 0,
-                            calidadAire = document.getString("calidadAire") ?: ""
-                        )
-                        "SensorInundacionDB" -> SensorInundacionDB(
-                            nombre = nombre,
-                            nivelSensibilidad = document.getString("nivelSensibilidad") ?: "",
-                            areaCobertura = document.getDouble("areaCobertura") ?: 0.0,
-                            tipoSensor = document.getString("tipoSensor") ?: ""
-                        )
-                        "PanelSolarDB" -> PanelSolarDB(
-                            nombre = nombre,
-                            potenciaMaxima = document.getLong("potenciaMaxima")?.toInt() ?: 0,
-                            eficiencia = document.getDouble("eficiencia") ?: 0.0,
-                            orientacion = document.getString("orientacion") ?: ""
-                        )
-                        "SensorPresionDB" -> SensorPresionDB(
-                            nombre = nombre,
-                            rangoPresion = document.getString("rangoPresion") ?: "",
-                            precision = document.getDouble("precision") ?: 0.0,
-                            unidadMedida = document.getString("unidadMedida") ?: ""
-                        )
-                        "SensorLuzDB" -> SensorLuzDB(
-                            nombre = nombre,
-                            rangoLuminosidad = document.getString("rangoLuminosidad") ?: "",
-                            tipoLuz = document.getString("tipoLuz") ?: "",
-                            sensibilidadEspectral = document.getString("sensibilidadEspectral") ?: ""
-                        )
-                        else -> null
+    LaunchedEffect(refreshTrigger) {
+        isLoading = true
+        try {
+            firestore.collection("dispositivos")
+                .get()
+                .addOnSuccessListener { result ->
+                    Log.d("PantallaInicio", "Documentos recuperados: ${result.size()}")
+                    dispositivos = result.documents.mapNotNull { document ->
+                        try {
+                            when (document.getString("tipo")) {
+                                "SensorTemperaturaHumedadDB" -> document.toObject(SensorTemperaturaHumedadDB::class.java)
+                                "SensorMovimientoDB" -> document.toObject(SensorMovimientoDB::class.java)
+                                "SensorAperturaDB" -> document.toObject(SensorAperturaDB::class.java)
+                                "ReleInteligenteDB" -> document.toObject(ReleInteligenteDB::class.java)
+                                "ActuadorValvulaDB" -> document.toObject(ActuadorValvulaDB::class.java)
+                                "ServomotorDB" -> document.toObject(ServomotorDB::class.java)
+                                "CamaraIPDB" -> document.toObject(CamaraIPDB::class.java)
+                                "ControladorClimaDB" -> document.toObject(ControladorClimaDB::class.java)
+                                "EstacionMeteorologicaDB" -> document.toObject(EstacionMeteorologicaDB::class.java)
+                                "SensorCalidadAireDB" -> document.toObject(SensorCalidadAireDB::class.java)
+                                "SensorInundacionDB" -> document.toObject(SensorInundacionDB::class.java)
+                                "PanelSolarDB" -> document.toObject(PanelSolarDB::class.java)
+                                "SensorPresionDB" -> document.toObject(SensorPresionDB::class.java)
+                                "SensorLuzDB" -> document.toObject(SensorLuzDB::class.java)
+                                else -> {
+                                    Log.w("PantallaInicio", "Tipo de dispositivo desconocido: ${document.getString("tipo")}")
+                                    null
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Log.e("PantallaInicio", "Error al convertir documento: ${e.message}")
+                            e.printStackTrace()
+                            null
+                        }
                     }
-                    dispositivo?.let { dispositivos.add(it) }
+                    sinRegistros = dispositivos.isEmpty()
+                    isLoading = false
+                    Log.d("PantallaInicio", "Dispositivos cargados: ${dispositivos.size}")
                 }
-            }
+                .addOnFailureListener { e ->
+                    Log.e("PantallaInicio", "Error al cargar dispositivos", e)
+                    error = e.message
+                    isLoading = false
+                }
+        } catch (e: Exception) {
+            Log.e("PantallaInicio", "Error general", e)
+            error = e.message
+            isLoading = false
         }
     }
 
-    LaunchedEffect(dispositivos) {
-        if (dispositivos.isNotEmpty()) {
-            MqttManager.connect(dispositivos.map { it.nombre }) { topic, message ->
-                dispositivoDatos[topic] = message
-            }
+    DisposableEffect(Unit) {
+        val topics = dispositivos.mapNotNull { it.topic }.distinct()
+        MqttManager.connect(topics) { topic, message ->
+            val newState = message == "ON"
+            firestore.collection("dispositivos")
+                .whereEqualTo("topic", topic)
+                .get()
+                .addOnSuccessListener { result ->
+                    for (document in result) {
+                        firestore.collection("dispositivos")
+                            .document(document.id)
+                            .update("estado", newState)
+                            .addOnSuccessListener {
+                                refreshTrigger += 1
+                            }
+                    }
+                }
+        }
+        onDispose {
+            MqttManager.disconnect()
         }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Lista de Dispositivos", fontSize = 18.sp, fontWeight = FontWeight.Bold) },
+                title = { Text("Lista de Dispositivos") },
                 actions = {
-                    IconButton(onClick = {
-                        authViewModel.logout()
-                        navController.navigate("login") {
-                            popUpTo("pantalla_inicio") { inclusive = true }
-                        }
-                    }) {
-                        Icon(Icons.Filled.ExitToApp, contentDescription = "Cerrar sesión")
+                    IconButton(onClick = { authViewModel.logout() }) {
+                        Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Cerrar sesión")
                     }
                 }
             )
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { navController.navigate("pantalla_agregar_dispositivo") },
-                containerColor = MaterialTheme.colorScheme.primary
+                onClick = { navController.navigate("pantalla_agregar_dispositivo") }
             ) {
-                Text("+", color = Color.White, fontSize = 24.sp)
+                Icon(Icons.Default.Add, contentDescription = "Agregar dispositivo")
             }
         }
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
                 .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Lista de Dispositivos", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(16.dp))
-
-            if (sinRegistros) {
-                Text("SIN REGISTROS", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
-            } else {
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(dispositivos) { dispositivo ->
-                        DispositivoCard(dispositivo, firestore, dispositivoDatos[dispositivo.nombre] ?: "No hay datos")
+            when {
+                isLoading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+                error != null -> {
+                    Text(
+                        text = "Error: $error",
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(16.dp),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                sinRegistros -> {
+                    Text(
+                        text = "No hay dispositivos registrados",
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(16.dp)
+                    )
+                }
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(dispositivos) { dispositivo ->
+                            DispositivoCard(
+                                dispositivo = dispositivo,
+                                onStateChange = { newState ->
+                                    dispositivo.topic?.let { topic ->
+                                        MqttManager.publish(topic, if (newState) "ON" else "OFF")
+                                        firestore.collection("dispositivos")
+                                            .whereEqualTo("topic", topic)
+                                            .get()
+                                            .addOnSuccessListener { result ->
+                                                for (document in result) {
+                                                    firestore.collection("dispositivos")
+                                                        .document(document.id)
+                                                        .update("estado", newState)
+                                                        .addOnSuccessListener {
+                                                            refreshTrigger += 1
+                                                        }
+                                                }
+                                            }
+                                    }
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -153,139 +192,130 @@ fun PantallaInicio(navController: NavHostController, authViewModel: AuthViewMode
     }
 }
 
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DispositivoCard(dispositivo: DispositivoBD, firestore: FirebaseFirestore, estado: String) {
-    var showDialog by remember { mutableStateOf(false) }
-    var expandedMenu by remember { mutableStateOf(false) }
+fun DispositivoCard(
+    dispositivo: DispositivoBD,
+    onStateChange: (Boolean) -> Unit
+) {
+    val firestore = FirebaseFirestore.getInstance()
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
-    val icono = when (dispositivo) {
-        is SensorTemperaturaHumedadDB -> Icons.Default.Thermostat
-        is SensorMovimientoDB -> Icons.Default.DirectionsRun
-        is CamaraIPDB -> Icons.Default.Videocam
-        is SensorCalidadAireDB -> Icons.Default.AirplanemodeActive
-        is SensorInundacionDB -> Icons.Default.WaterDrop
-        is PanelSolarDB -> Icons.Default.WbSunny
-        is SensorPresionDB -> Icons.Default.Speed
-        is SensorLuzDB -> Icons.Default.Lightbulb
-        else -> Icons.Default.Devices
-    }
-
-    Card(
-        shape = RoundedCornerShape(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(imageVector = icono, contentDescription = "Ícono del dispositivo", tint = Color.Blue, modifier = Modifier.size(40.dp))
-
-            Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
-                Text(text = "Nombre: ${dispositivo.nombre}", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                Text("Estado: $estado")
-                when (dispositivo) {
-                    is SensorTemperaturaHumedadDB -> {
-                        Text("Rango Temperatura: ${dispositivo.rangoTemperatura}")
-                        Text("Rango Humedad: ${dispositivo.rangoHumedad}")
-                    }
-                    is SensorMovimientoDB -> {
-                        Text("Distancia Detección: ${dispositivo.distanciaDeteccion}m")
-                        Text("Ángulo Detección: ${dispositivo.anguloDeteccion}°")
-                    }
-                    is CamaraIPDB -> {
-                        Text("Resolución: ${dispositivo.resolucion}")
-                        Text("Visión Nocturna: ${if (dispositivo.visionNocturna) "Sí" else "No"}")
-                    }
-                    is SensorCalidadAireDB -> {
-                        Text("Nivel CO2: ${dispositivo.nivelCO2} ppm")
-                        Text("Nivel VOC: ${dispositivo.nivelVOC} ppb")
-                        Text("Calidad del Aire: ${dispositivo.calidadAire}")
-                    }
-                    is SensorInundacionDB -> {
-                        Text("Sensibilidad: ${dispositivo.nivelSensibilidad}")
-                        Text("Área de Cobertura: ${dispositivo.areaCobertura}m²")
-                        Text("Tipo de Sensor: ${dispositivo.tipoSensor}")
-                    }
-                    is PanelSolarDB -> {
-                        Text("Potencia Máxima: ${dispositivo.potenciaMaxima}W")
-                        Text("Eficiencia: ${dispositivo.eficiencia}%")
-                        Text("Orientación: ${dispositivo.orientacion}")
-                    }
-                    is SensorPresionDB -> {
-                        Text("Rango de Presión: ${dispositivo.rangoPresion}")
-                        Text("Precisión: ${dispositivo.precision}")
-                        Text("Unidad: ${dispositivo.unidadMedida}")
-                    }
-                    is SensorLuzDB -> {
-                        Text("Rango Luminosidad: ${dispositivo.rangoLuminosidad}")
-                        Text("Tipo de Luz: ${dispositivo.tipoLuz}")
-                        Text("Sensibilidad Espectral: ${dispositivo.sensibilidadEspectral}")
-                    }
-
-                    is ActuadorValvulaDB -> TODO()
-                    is ControladorClimaDB -> TODO()
-                    is EstacionMeteorologicaDB -> TODO()
-                    is ReleInteligenteDB -> TODO()
-                    is SensorAperturaDB -> TODO()
-                    is ServomotorDB -> TODO()
-                }
-            }
-
-            Box {
-                IconButton(onClick = { expandedMenu = true }) {
-                    Icon(Icons.Default.MoreVert, contentDescription = "Menú opciones")
-                }
-                DropdownMenu(expanded = expandedMenu, onDismissRequest = { expandedMenu = false }) {
-                    DropdownMenuItem(
-                        text = { Text("Borrar") },
-                        onClick = {
-                            showDialog = true
-                            expandedMenu = false
-                        },
-                        leadingIcon = {
-                            Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = Color.Red)
-                        }
-                    )
-                }
-            }
-        }
-    }
-
-    if (showDialog) {
+    if (showDeleteDialog) {
         AlertDialog(
-            onDismissRequest = { showDialog = false },
-            title = { Text("Confirmar Eliminación") },
-            text = { Text("¿Estás seguro de que deseas eliminar este dispositivo? Esta acción no se puede deshacer.") },
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Confirmar eliminación") },
+            text = { Text("¿Estás seguro de que quieres eliminar este dispositivo?") },
             confirmButton = {
-                Button(
+                TextButton(
                     onClick = {
                         firestore.collection("dispositivos")
-                            .whereEqualTo("nombre", dispositivo.nombre)
+                            .whereEqualTo("topic", dispositivo.topic)
                             .get()
                             .addOnSuccessListener { result ->
                                 for (document in result) {
-                                    firestore.collection("dispositivos").document(document.id).delete()
+                                    document.reference.delete()
                                 }
                             }
-                        showDialog = false
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                        showDeleteDialog = false
+                    }
                 ) {
-                    Text("Eliminar", color = Color.White)
+                    Text("Eliminar")
                 }
             },
             dismissButton = {
-                Button(onClick = { showDialog = false }) {
+                TextButton(onClick = { showDeleteDialog = false }) {
                     Text("Cancelar")
                 }
             }
         )
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = dispositivo.nombre,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+                Row(
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = { showDeleteDialog = true }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Eliminar dispositivo",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                    Switch(
+                        checked = dispositivo.estado,
+                        onCheckedChange = onStateChange
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Mostrar detalles específicos según el tipo de dispositivo
+            when (dispositivo) {
+                is SensorTemperaturaHumedadDB -> {
+                    Text("Rango de Temperatura: ${dispositivo.rangoTemperatura}")
+                    Text("Rango de Humedad: ${dispositivo.rangoHumedad}")
+                }
+                is SensorMovimientoDB -> {
+                    Text("Distancia de Detección: ${dispositivo.distanciaDeteccion}m")
+                    Text("Ángulo de Detección: ${dispositivo.anguloDeteccion}°")
+                }
+                is SensorAperturaDB -> {
+                    Text("Tipo de Puerta: ${dispositivo.tipoPuerta}")
+                    Text("Sensibilidad: ${dispositivo.sensibilidad}")
+                }
+                is ReleInteligenteDB -> {
+                    Text("Capacidad de Corriente: ${dispositivo.capacidadCorriente}A")
+                    Text("Voltaje Soportado: ${dispositivo.voltajeSoportado}V")
+                }
+                is SensorCalidadAireDB -> {
+                    Text("Nivel CO2: ${dispositivo.nivelCO2} ppm")
+                    Text("Nivel VOC: ${dispositivo.nivelVOC}")
+                    Text("Calidad del Aire: ${dispositivo.calidadAire}")
+                }
+                is SensorInundacionDB -> {
+                    Text("Nivel de Sensibilidad: ${dispositivo.nivelSensibilidad}")
+                    Text("Área de Cobertura: ${dispositivo.areaCobertura}m²")
+                    Text("Tipo de Sensor: ${dispositivo.tipoSensor}")
+                }
+                else -> {
+                    if (dispositivo.topic != null) {
+                        Text("Topic MQTT: ${dispositivo.topic}")
+                    }
+                }
+            }
+            
+            if (dispositivo.topic != null) {
+                Text(
+                    text = "Estado MQTT: ${if (dispositivo.estado) "Conectado" else "Desconectado"}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (dispositivo.estado) Color.Green else Color.Red
+                )
+            }
+        }
     }
 }
