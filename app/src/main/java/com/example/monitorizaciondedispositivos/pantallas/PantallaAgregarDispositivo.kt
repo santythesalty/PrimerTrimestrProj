@@ -46,6 +46,7 @@ import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material.icons.filled.Air
 import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.Refresh
+import com.example.monitorizaciondedispositivos.mqtt.MqttManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,6 +96,19 @@ fun PantallaAgregarDispositivo(navController: NavHostController) {
     var rangoLuminosidad by remember { mutableStateOf("") }
     var tipoLuz by remember { mutableStateOf("") }
     var sensibilidadEspectral by remember { mutableStateOf("") }
+
+    //Variables del Mqtt
+    var estadoDispositivo by remember { mutableStateOf("Cargando...") }
+
+    LaunchedEffect(nombre) {
+        if (nombre.isNotEmpty()) {
+            MqttManager.connect(listOf(nombre)) { topic, message ->
+                if (topic == nombre) {
+                    estadoDispositivo = message
+                }
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -241,6 +255,7 @@ fun PantallaAgregarDispositivo(navController: NavHostController) {
                             unfocusedBorderColor = MaterialTheme.colorScheme.outline
                         )
                     )
+
                     
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -773,6 +788,8 @@ fun PantallaAgregarDispositivo(navController: NavHostController) {
                     }
                 }
             }
+
+
 
             // Botón de guardar mejorado
             Button(
